@@ -143,7 +143,17 @@ decisions + owned, dated tasks in Notion, with memory across meetings.
 
 ## Env vars (`.env.local`, template in `.env.example`)
 
-`GEMINI_API_KEY`, `GEMINI_MODEL`, `GEMINI_FALLBACK_MODEL`, `NOTION_TOKEN`, `NOTION_DATABASE_ID` (optional: `DATABASE_PATH`).
+`GEMINI_API_KEY`, `GEMINI_MODEL`, `GEMINI_FALLBACK_MODEL`, `NOTION_TOKEN`, `NOTION_DATABASE_ID` (optional: `DATABASE_PATH`,
+`SEED_DEMO_ON_EMPTY`).
+
+## Deploy (Render, free)
+
+`render.yaml` is a Render Blueprint: free Node 22 web service in Singapore, `npm ci && npm run build`, `npm start`
+(Next reads Render's `PORT`), health check `/api/health`. Secrets (`GEMINI_API_KEY`, `NOTION_TOKEN`,
+`NOTION_DATABASE_ID`) are entered in the Render dashboard, never committed. The free disk is wiped whenever the
+service restarts or sleeps (15 min idle), so `SEED_DEMO_ON_EMPTY=1` makes `getDb()` (`seedIfEmpty`) load the demo
+meetings into an empty database; the health check triggers it on start. Saved meetings do not survive a restart there.
+Pushes to `main` redeploy automatically.
 
 ## Status
 

@@ -1,0 +1,28 @@
+# Render Blueprint: Dashboard -> New -> Blueprint -> pick this repo.
+# Free web service. Its disk is wiped when the service restarts or sleeps (after 15 min idle),
+# so SEED_DEMO_ON_EMPTY reloads the demo meetings into the empty SQLite database on start.
+services:
+  - type: web
+    name: minutes-to-momentum
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: SEED_DEMO_ON_EMPTY
+        value: "1"
+      - key: GEMINI_MODEL
+        value: gemini-3.5-flash
+      - key: GEMINI_FALLBACK_MODEL
+        value: gemini-3.5-flash-lite,gemini-3.1-flash-lite,gemini-flash-lite-latest
+      # Secrets: Render asks for these when you create the Blueprint (never committed).
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: NOTION_TOKEN
+        sync: false
+      - key: NOTION_DATABASE_ID
+        sync: false

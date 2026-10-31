@@ -2,6 +2,7 @@ import "server-only";
 import fs from "node:fs";
 import path from "node:path";
 import Database from "better-sqlite3";
+import { resetDemoData } from "./demo";
 import { SCHEMA_SQL } from "./schema";
 
 // SQLite file lives in ./data (git-ignored). Override with DATABASE_PATH if needed.
@@ -30,7 +31,19 @@ export function getDb(): Database.Database {
   migrate(db);
 
   globalForDb.__momentumDb = db;
+  seedIfEmpty(db);
   return db;
+}
+
+/**
+ * Hosts with a throwaway disk (Render's free tier) start with an empty database after every
+ * restart. With SEED_DEMO_ON_EMPTY=1 the demo meetings are loaded then, so the app never opens
+ * empty. Runs after the connection is stored, because resetDemoData() calls getDb() itself.
+ */
+function seedIfEmpty(db: Database.Database) {
+  if (process.env.SEED_DEMO_ON_EMPTY !== "1") return;
+  if (db.prepare("SELECT 1 FROM meetings LIMIT 1").get()) return;
+  resetDemoData();
 }
 
 /** Small additive migrations for databases created before a column existed. */
