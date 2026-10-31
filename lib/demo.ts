@@ -184,3 +184,14 @@ export function resetDemoData(today = todayIso()) {
   });
   run();
 }
+
+/**
+ * Loads the demo data only when there are no meetings yet. Called once at server start
+ * (instrumentation.ts) when SEED_DEMO_ON_EMPTY=1, so a host with a throwaway disk (Render's free
+ * tier) always opens with data. Returns true when it loaded the demo.
+ */
+export function seedDemoIfEmpty(today = todayIso()): boolean {
+  if (getDb().prepare("SELECT 1 FROM meetings LIMIT 1").get()) return false;
+  resetDemoData(today);
+  return true;
+}

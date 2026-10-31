@@ -1,25 +1,9 @@
 import { connection } from "next/server";
-import { getDb } from "@/lib/db";
-import { getModelName } from "@/lib/ai";
 
-// GET /api/health -> confirms the DB tables exist and which env vars are set.
-// Never returns secret values, only true/false.
+// GET /api/health -> {"ok":true}. For uptime pingers and Render's health check: touches neither
+// the AI nor the database. connection() keeps it answered live per request (with Cache Components
+// a GET handler would otherwise be prerendered at build time). Diagnostics live at /api/status.
 export async function GET() {
   await connection();
-  const tables = (
-    getDb()
-      .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name")
-      .all() as { name: string }[]
-  ).map((t) => t.name);
-
-  return Response.json({
-    ok: true,
-    tables,
-    env: {
-      GEMINI_API_KEY: Boolean(process.env.GEMINI_API_KEY?.trim()),
-      GEMINI_MODEL: getModelName(),
-      NOTION_TOKEN: Boolean(process.env.NOTION_TOKEN?.trim()),
-      NOTION_DATABASE_ID: Boolean(process.env.NOTION_DATABASE_ID?.trim()),
-    },
-  });
+  return Response.json({ ok: true });
 }

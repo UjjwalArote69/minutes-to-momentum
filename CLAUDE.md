@@ -30,7 +30,8 @@ decisions + owned, dated tasks in Notion, with memory across meetings.
 | `/tasks`        | Table of all action items; filters status / due / person; done syncs to Notion |
 | `/digest`       | Pick a person -> AI digest (1 call, saved per person per day) + Copy |
 | `/decisions`    | Decision history per meeting; replaced ones crossed out    |
-| `/api/health`   | DB tables and which env vars are set (no secret values)    |
+| `/api/health`   | `{"ok":true}` for uptime pingers / Render; no DB or AI     |
+| `/api/status`   | DB tables and which env vars are set (no secret values)    |
 
 ## Tech stack (free tools only)
 
@@ -151,9 +152,10 @@ decisions + owned, dated tasks in Notion, with memory across meetings.
 `render.yaml` is a Render Blueprint: free Node 22 web service in Singapore, `npm ci && npm run build`, `npm start`
 (Next reads Render's `PORT`), health check `/api/health`. Secrets (`GEMINI_API_KEY`, `NOTION_TOKEN`,
 `NOTION_DATABASE_ID`) are entered in the Render dashboard, never committed. The free disk is wiped whenever the
-service restarts or sleeps (15 min idle), so `SEED_DEMO_ON_EMPTY=1` makes `getDb()` (`seedIfEmpty`) load the demo
-meetings into an empty database; the health check triggers it on start. Saved meetings do not survive a restart there.
-Pushes to `main` redeploy automatically.
+service restarts or sleeps (15 min idle), so with `SEED_DEMO_ON_EMPTY=1` the root `instrumentation.ts` (`register()`,
+runs once at server start before any request) calls `seedDemoIfEmpty()` from `lib/demo.ts`: demo data only when there
+are no meetings. Skipped during `next build` (`NEXT_PHASE`) so no build-dated database ships. Saved meetings do not
+survive a restart there. Pushes to `main` redeploy automatically.
 
 ## Status
 

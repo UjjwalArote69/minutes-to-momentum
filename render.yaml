@@ -1,6 +1,7 @@
 # Render Blueprint: Dashboard -> New -> Blueprint -> pick this repo.
 # Free web service. Its disk is wiped when the service restarts or sleeps (after 15 min idle),
-# so SEED_DEMO_ON_EMPTY reloads the demo meetings into the empty SQLite database on start.
+# so SEED_DEMO_ON_EMPTY makes instrumentation.ts load the demo meetings into the empty SQLite
+# database when the server starts. /api/health answers {"ok":true} without touching the DB or AI.
 services:
   - type: web
     name: minutes-to-momentum
