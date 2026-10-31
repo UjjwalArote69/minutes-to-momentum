@@ -68,8 +68,9 @@ decisions + owned, dated tasks in Notion, with memory across meetings.
 - `lib/ai.ts`: **the only file that calls Gemini.** `generateJson({ prompt, schema, system, label })`
   - asks for JSON via `responseMimeType: "application/json"` + `responseJsonSchema` (from Zod)
   - validates the reply with the same Zod schema
-  - every request has a time limit (20s main / 35s retry); on 429/500/502/503/504/timeout it retries **once**, on
-    `GEMINI_FALLBACK_MODEL` (default `gemini-3.1-flash-lite`), else same model after the suggested `retryDelay`
+  - every request has a time limit (20s main / 30s each fallback); on 429/500/502/503/504/timeout it walks the
+    fallback chain `GEMINI_FALLBACK_MODEL` (comma-separated; default `gemini-3.5-flash-lite, gemini-3.1-flash-lite,
+    gemini-flash-lite-latest`) and stops at the first answer; with none set, retries the same model once
   - caches validated replies in `ai_cache` (key = sha256 of model+system+prompt+schema+temp);
     `refresh: true` bypasses the cache read, `cache: false` disables it, `clearAiCache()` wipes it.
 - `lib/extraction.ts`: the extraction prompt + Zod schema (`extractMeeting()`; one call does clean + extract).

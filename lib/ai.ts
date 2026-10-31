@@ -9,17 +9,19 @@ import { getDb } from "./db";
  *
  * - Asks Gemini for JSON that matches a Zod schema (structured output) and validates it.
  * - Every request has a time limit, so an overloaded model can't hang the UI.
- * - If the main model is busy (429 / 500 / 502 / 503 / 504 / time limit) it retries ONCE: on the fallback
- *   model (GEMINI_FALLBACK_MODEL) when one is set, otherwise on the same model after
- *   Gemini's suggested wait.
+ * - If the main model is busy (429 / 500 / 502 / 503 / 504 / time limit) it walks a CHAIN of fallback
+ *   models (GEMINI_FALLBACK_MODEL, comma-separated) and stops at the first that answers. Busy models
+ *   usually reject in 1-2 s, so the chain is fast. With no fallbacks it retries the same model once
+ *   after Gemini's suggested wait.
  * - Caches validated responses in SQLite (ai_cache table) keyed by model + prompt +
  *   schema, so re-running the same transcript costs zero free-tier quota.
  */
 
 const DEFAULT_MODEL = "gemini-3.5-flash";
-const DEFAULT_FALLBACK_MODEL = "gemini-3.1-flash-lite";
+/** Tried in order when the main model is busy. Availability shifts between models, so keep several. */
+const DEFAULT_FALLBACK_MODELS = ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-flash-lite-latest"];
 const PRIMARY_TIMEOUT_MS = 20_000;
-const FALLBACK_TIMEOUT_MS = 35_000;
+const FALLBACK_TIMEOUT_MS = 30_000;
 const MAX_RETRY_WAIT_MS = 60_000; // longer suggested waits usually mean the daily quota is gone
 const DEFAULT_RETRY_WAIT_MS = 10_000;
 
@@ -38,12 +40,13 @@ export function getModelName(): string {
   return process.env.GEMINI_MODEL?.trim() || DEFAULT_MODEL;
 }
 
-/** Fallback model, or null when disabled (GEMINI_FALLBACK_MODEL=none) or same as the main model. */
-export function getFallbackModelName(): string | null {
+/** Fallback models in order (GEMINI_FALLBACK_MODEL, comma-separated; "none" disables). */
+export function getFallbackModels(): string[] {
   const raw = process.env.GEMINI_FALLBACK_MODEL?.trim();
-  if (raw && /^(none|off|false)$/i.test(raw)) return null;
-  const model = raw || DEFAULT_FALLBACK_MODEL;
-  return model === getModelName() ? null : model;
+  if (raw && /^(none|off|false)$/i.test(raw)) return [];
+  const list = raw ? raw.split(",").map((m) => m.trim()).filter(Boolean) : DEFAULT_FALLBACK_MODELS;
+  const main = getModelName();
+  return [...new Set(list)].filter((m) => m !== main);
 }
 
 let client: GoogleGenAI | null = null;
@@ -122,7 +125,7 @@ export async function generateJson<T extends z.ZodType>(
         httpOptions: { timeout: timeoutMs },
       },
     });
-  const { text, usedModel } = await callWithOneRetry(label, model, call);
+  const { text, usedModel } = await callWithFallbacks(label, model, call);
 
   // 3) Parse + validate.
   let json: unknown;
@@ -166,7 +169,7 @@ export function clearAiCache(label?: string): number {
 
 type Call = (model: string, timeoutMs: number) => Promise<{ text?: string }>;
 
-async function callWithOneRetry(
+async function callWithFallbacks(
   label: string,
   model: string,
   call: Call,
@@ -179,18 +182,24 @@ async function callWithOneRetry(
   } catch (err) {
     if (!isRetryable(err)) throw toAiError(err);
 
-    const fallback = getFallbackModelName();
-    if (fallback) {
+    const fallbacks = getFallbackModels();
+    if (fallbacks.length > 0) {
       // A busy model usually stays busy for a while, so switch models instead of waiting.
-      console.warn(`[ai:${label}] ${model} ${describe(err)} after ${seconds(started)}; trying ${fallback}`);
-      const retryStarted = Date.now();
-      try {
-        const text = requireText(await call(fallback, FALLBACK_TIMEOUT_MS), label);
-        console.log(`[ai:${label}] ${fallback} answered in ${seconds(retryStarted)}`);
-        return { text, usedModel: fallback };
-      } catch (err2) {
-        throw toAiError(err2);
+      console.warn(`[ai:${label}] ${model} ${describe(err)} after ${seconds(started)}; trying ${fallbacks.join(" > ")}`);
+      let lastErr: unknown = err;
+      for (const fallback of fallbacks) {
+        const retryStarted = Date.now();
+        try {
+          const text = requireText(await call(fallback, FALLBACK_TIMEOUT_MS), label);
+          console.log(`[ai:${label}] ${fallback} answered in ${seconds(retryStarted)}`);
+          return { text, usedModel: fallback };
+        } catch (err2) {
+          lastErr = err2;
+          if (!isRetryable(err2)) throw toAiError(err2); // e.g. bad request: another model won't help
+          console.warn(`[ai:${label}] ${fallback} ${describe(err2)} after ${seconds(retryStarted)}`);
+        }
       }
+      throw toAiError(lastErr);
     }
 
     const waitMs = suggestedRetryMs(err);

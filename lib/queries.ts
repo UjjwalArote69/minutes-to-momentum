@@ -336,3 +336,17 @@ export function saveDigest(name: string, date: string, content: string) {
     )
     .run(date, content, name);
 }
+
+/** Open tasks that are ready for Notion (owner + deadline) but not in Notion yet, or out of date there. */
+export function notionPendingTaskIds(): number[] {
+  return (
+    getDb()
+      .prepare(
+        `SELECT a.id FROM action_items a
+         WHERE ${OPEN} AND a.owner_id IS NOT NULL AND a.due_date IS NOT NULL
+           AND (a.notion_page_id IS NULL OR a.notion_status IN ('needs_update', 'failed'))
+         ORDER BY a.due_date, a.id`,
+      )
+      .all() as { id: number }[]
+  ).map((r) => r.id);
+}

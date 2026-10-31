@@ -4,7 +4,7 @@ import { refresh } from "next/cache";
 import { z } from "zod";
 import { isIsoDate } from "@/lib/meeting-types";
 import { approveAndSend, syncDoneStatus } from "@/lib/notion-sync";
-import { setTaskDone, updateTaskDetails } from "@/lib/queries";
+import { notionPendingTaskIds, setTaskDone, updateTaskDetails } from "@/lib/queries";
 
 export type TaskActionResult = { ok: true; warning?: string } | { ok: false; message: string };
 
@@ -33,6 +33,24 @@ export async function sendTaskToNotionAction(id: number): Promise<TaskActionResu
   refresh();
   const r = results[0];
   return r?.ok ? { ok: true } : { ok: false, message: r?.message ?? "Couldn't send the task to Notion." };
+}
+
+export type SendAllResult = { sent: number; updated: number; failed: number; firstError: string | null; databaseUrl: string | null };
+
+/** Approve and send every ready task that isn't in Notion yet (or is out of date there). Never duplicates. */
+export async function sendAllToNotionAction(): Promise<SendAllResult> {
+  const ids = notionPendingTaskIds();
+  if (ids.length === 0) return { sent: 0, updated: 0, failed: 0, firstError: null, databaseUrl: null };
+  const { results, databaseUrl } = await approveAndSend(ids);
+  refresh();
+  const failed = results.filter((r) => !r.ok);
+  return {
+    sent: results.filter((r) => r.ok && r.action === "created").length,
+    updated: results.filter((r) => r.ok && r.action === "updated").length,
+    failed: failed.length,
+    firstError: failed[0] && !failed[0].ok ? failed[0].message : null,
+    databaseUrl,
+  };
 }
 
 const detailsSchema = z.object({

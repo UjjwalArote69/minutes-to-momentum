@@ -11,6 +11,7 @@ import {
   UNASSIGNED,
   allPeopleNames,
   listTasks,
+  notionPendingTaskIds,
   taskCounts,
   taskOwners,
   unassignedOpenCount,
@@ -19,6 +20,7 @@ import {
   type TaskStatusFilter,
 } from "@/lib/queries";
 import { TASK_COLUMNS } from "./columns";
+import { SendAllButton } from "./send-all-button";
 import { TaskItem } from "./task-item";
 
 export const metadata: Metadata = { title: "Tasks" };
@@ -66,6 +68,7 @@ async function TaskBoard({ searchParams }: { searchParams: Search }) {
   const owners = taskOwners();
   const unassigned = unassignedOpenCount();
   const people = allPeopleNames();
+  const pendingNotion = notionPendingTaskIds().length;
 
   if (counts.all === 0 && !owner) {
     return (
@@ -129,6 +132,7 @@ async function TaskBoard({ searchParams }: { searchParams: Search }) {
             </nav>
           </FilterGroup>
         </div>
+        <div className="flex flex-wrap items-start justify-between gap-3">
         <FilterGroup label="Person">
           <nav aria-label="Filter by person" className="flex flex-wrap items-center gap-1.5">
             <Chip href={href({ owner: null })} active={!owner}>
@@ -146,6 +150,8 @@ async function TaskBoard({ searchParams }: { searchParams: Search }) {
             )}
           </nav>
         </FilterGroup>
+        <SendAllButton count={pendingNotion} />
+        </div>
       </div>
 
       <datalist id="task-people">
