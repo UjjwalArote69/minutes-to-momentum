@@ -34,6 +34,9 @@
   --hairline: light-dark(rgba(29, 29, 31, 0.08), rgba(255, 255, 255, 0.09));
   --fill: light-dark(rgba(29, 29, 31, 0.05), rgba(255, 255, 255, 0.07)); /* quiet control background */
   --fill-hover: light-dark(rgba(29, 29, 31, 0.08), rgba(255, 255, 255, 0.11));
+  --scrollbar-thumb: light-dark(rgba(29, 29, 31, 0.2), rgba(255, 255, 255, 0.2));
+  --scrollbar-thumb-hover: light-dark(rgba(29, 29, 31, 0.36), rgba(255, 255, 255, 0.34));
+  --scrollbar-thumb-active: light-dark(rgba(29, 29, 31, 0.5), rgba(255, 255, 255, 0.48));
 
   --glass: light-dark(rgba(255, 255, 255, 0.38), rgba(28, 29, 34, 0.42));
   --glass-strong: light-dark(rgba(255, 255, 255, 0.62), rgba(34, 35, 40, 0.7));
@@ -169,6 +172,63 @@ body {
   :root {
     --glass: var(--glass-reduced);
     --glass-strong: var(--glass-strong-reduced);
+  }
+}
+
+/* Scrollbars: a slim rounded thumb in the ink colour on a clear track (macOS style), both themes.
+   Chrome/Edge/Safari use the ::-webkit-scrollbar parts. Chrome ignores those on any element that
+   sets scrollbar-color/scrollbar-width, so the standard properties are only applied where the
+   WebKit parts aren't supported (Firefox). Elements that hide their scrollbar
+   ([scrollbar-width:none], e.g. the mobile nav) keep doing so. */
+@supports selector(::-webkit-scrollbar) {
+  ::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  /* The page scrollbar sits outside the fixed .ambient light, over flat --base. Paint its track
+     with the light .ambient shows along the right edge: peach rising from the bottom (amb-2,
+     linear to 0 at 54%) and blush fading from the top (amb-3, the curve of its off-centre ellipse).
+     Both depend only on vh, so the track lines up with the page at any window size.
+     (Chrome styles the page scrollbar from <body> when body has scrollbar styles, so both.) */
+  html::-webkit-scrollbar-track,
+  body::-webkit-scrollbar-track {
+    background:
+      linear-gradient(to top, var(--amb-2), transparent 54%),
+      linear-gradient(
+        to bottom,
+        color-mix(in srgb, var(--amb-3) 82%, transparent) 0%,
+        color-mix(in srgb, var(--amb-3) 64%, transparent) 18%,
+        color-mix(in srgb, var(--amb-3) 30%, transparent) 32%,
+        transparent 44%
+      ),
+      var(--base);
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--scrollbar-thumb);
+    background-clip: padding-box;
+    border: 3px solid transparent;
+    border-radius: 999px;
+    min-height: 44px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--scrollbar-thumb-hover);
+  }
+  ::-webkit-scrollbar-thumb:active {
+    background-color: var(--scrollbar-thumb-active);
+    border-width: 2px;
+  }
+  ::-webkit-scrollbar-button {
+    display: none;
+  }
+}
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
   }
 }
 

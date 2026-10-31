@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Favicon version of the sidebar mark (app/layout.tsx): a voice waveform settling into a tick.
+       Simplified for tab size (no small middle bar, bolder strokes) so it reads at 16px.
+       Colours follow the primary and on-primary tokens in globals.css. -->
+  <style>
+    .disc { fill: #1d1d1f; }
+    .glyph { stroke: #ffffff; }
+    @media (prefers-color-scheme: dark) {
+      .disc { fill: #f5f5f7; }
+      .glyph { stroke: #1d1d1f; }
+    }
+  </style>
+  <circle class="disc" cx="16" cy="16" r="16" />
+  <g class="glyph" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8 13.5v5M12.5 10v12" />
+    <path d="m16 16.5 3 3 5-7.5" />
+  </g>
+</svg>
