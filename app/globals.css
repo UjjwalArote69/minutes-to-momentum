@@ -1,26 +1,198 @@
 @import "tailwindcss";
 
+/*
+ * Minutes to Momentum: Apple-style materials.
+ * - Ambient: soft out-of-focus light (sky + peach) behind everything, so glass has something to blur.
+ * - Glass: chrome and secondary surfaces (sidebar, capture panel, tiles, save bar).
+ * - Sheet: solid surface for the things you act on (lists, inputs).
+ * - Yellow is reserved for "needs clarification"; red for recording/errors; blue for links/focus.
+ */
+
+/* Theme: tokens hold both values via light-dark(); `color-scheme` picks one.
+   System by default; the toggle sets <html data-theme="light|dark">. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light dark;
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+:root {
+  --base: light-dark(#e6ecf3, #0c0f15);
+  --amb-1: light-dark(#8fbbe8, #23426b); /* sky */
+  --amb-2: light-dark(#f3bf98, #5c3420); /* peach */
+  --amb-3: light-dark(#eebccd, #432737); /* blush */
+  --amb-4: light-dark(#cfe0d6, #1b3133); /* morning haze */
+  --grain-opacity: 0.055;
+
+  --ink: light-dark(#1d1d1f, #f5f5f7);
+  --ink-2: light-dark(#48484d, #c4c4ca);
+  --ink-3: light-dark(#75757c, #8e8e95);
+  --hairline: light-dark(rgba(29, 29, 31, 0.08), rgba(255, 255, 255, 0.09));
+  --fill: light-dark(rgba(29, 29, 31, 0.05), rgba(255, 255, 255, 0.07)); /* quiet control background */
+  --fill-hover: light-dark(rgba(29, 29, 31, 0.08), rgba(255, 255, 255, 0.11));
+
+  --glass: light-dark(rgba(255, 255, 255, 0.38), rgba(28, 29, 34, 0.42));
+  --glass-strong: light-dark(rgba(255, 255, 255, 0.62), rgba(34, 35, 40, 0.7));
+  --glass-border: light-dark(rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0.1));
+  --glass-highlight: light-dark(rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.08));
+  /* More opaque glass for "Reduce transparency" (used by the media query below). */
+  --glass-reduced: light-dark(rgba(255, 255, 255, 0.66), rgba(28, 29, 34, 0.72));
+  --glass-strong-reduced: light-dark(rgba(255, 255, 255, 0.8), rgba(34, 35, 40, 0.84));
+  --sheet: light-dark(#ffffff, #1b1c20);
+
+  --avatar-ring: light-dark(rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.1));
+  --shadow-float: 0 24px 48px -26px light-dark(rgba(32, 48, 72, 0.38), rgba(0, 0, 0, 0.6));
+  --shadow-sheet: 0 1px 2px light-dark(rgba(32, 48, 72, 0.05), rgba(0, 0, 0, 0.3)), 0 16px 40px -22px light-dark(rgba(32, 48, 72, 0.3), rgba(0, 0, 0, 0.6));
+  --shadow-control: 0 1px 2px light-dark(rgba(32, 48, 72, 0.08), rgba(0, 0, 0, 0.4)), 0 4px 12px -6px light-dark(rgba(32, 48, 72, 0.2), rgba(0, 0, 0, 0));
+
+  --primary: light-dark(#1d1d1f, #f5f5f7);
+  --on-primary: light-dark(#ffffff, #1d1d1f);
+  --blue: light-dark(#0a6cdb, #4aa3ff);
+  --live: light-dark(#e5352b, #ff5a4f);
+  --live-soft: light-dark(rgba(229, 53, 43, 0.1), rgba(255, 90, 79, 0.14));
+  --go: light-dark(#23853b, #34c759);
+  --go-soft: light-dark(rgba(35, 133, 59, 0.1), rgba(52, 199, 89, 0.14));
+  --attention: light-dark(#f5c400, #ffd60a);
+  --attention-soft: light-dark(rgba(255, 214, 10, 0.2), rgba(255, 214, 10, 0.13));
+  --attention-ink: light-dark(#6b5000, #ffd60a);
+  /* Orange: conflicts with memory (deadline / owner / duplicate). Red (live) for contradictions. */
+  --caution: light-dark(#ff9500, #ff9f0a);
+  --caution-soft: light-dark(rgba(255, 149, 0, 0.12), rgba(255, 159, 10, 0.14));
+  --caution-ink: light-dark(#9a4700, #ffb340);
+
+  --av-1: light-dark(#cfe1f4, #27405e);
+  --av-2: light-dark(#f7dbc7, #5a3a2a);
+  --av-3: light-dark(#f2d5de, #4d2f3c);
+  --av-4: light-dark(#d5e7d4, #2c4630);
+  --av-5: light-dark(#ece1c6, #4c4329);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-base: var(--base);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-hairline: var(--hairline);
+  --color-fill: var(--fill);
+  --color-fill-hover: var(--fill-hover);
+  --color-sheet: var(--sheet);
+  --color-primary: var(--primary);
+  --color-on-primary: var(--on-primary);
+  --color-blue: var(--blue);
+  --color-live: var(--live);
+  --color-live-soft: var(--live-soft);
+  --color-go: var(--go);
+  --color-go-soft: var(--go-soft);
+  --color-attention: var(--attention);
+  --color-attention-soft: var(--attention-soft);
+  --color-attention-ink: var(--attention-ink);
+  --color-caution: var(--caution);
+  --color-caution-soft: var(--caution-soft);
+  --color-caution-ink: var(--caution-ink);
+  --font-sans: var(--font-onest), ui-sans-serif, system-ui, sans-serif;
+  --shadow-sheet: var(--shadow-sheet);
+  --shadow-float: var(--shadow-float);
+  --shadow-control: var(--shadow-control);
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background: var(--base);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: transparent;
+  font-feature-settings: "cv11", "ss01";
+}
+
+/* Soft, out-of-focus light behind the app (fixed, never scrolls). */
+.ambient {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(75vw 70vh at 5% 0%, var(--amb-1), transparent 72%),
+    radial-gradient(70vw 75vh at 100% 100%, var(--amb-2), transparent 72%),
+    radial-gradient(50vw 55vh at 95% 5%, var(--amb-3), transparent 72%),
+    radial-gradient(55vw 60vh at 0% 100%, var(--amb-4), transparent 72%),
+    var(--base);
+}
+/* Film grain so the light reads as a photo, not a flat gradient (and doesn't band). */
+.ambient::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: var(--grain-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Materials */
+@utility glass {
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(28px) saturate(170%);
+  backdrop-filter: blur(28px) saturate(170%);
+  border: 1px solid var(--glass-border);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), var(--shadow-float);
+}
+@utility glass-flat {
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid var(--glass-border);
+  box-shadow: inset 0 1px 0 var(--glass-highlight);
+}
+@utility glass-strong {
+  background: var(--glass-strong);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+  backdrop-filter: blur(32px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), var(--shadow-float);
+}
+@utility sheet {
+  background: var(--sheet);
+  border: 1px solid var(--hairline);
+  box-shadow: var(--shadow-sheet);
+}
+
+/* "Reduce transparency" (e.g. Windows Transparency effects off): keep the material but make it
+   much more opaque, so text never competes with what's behind it.
+   Only var() references here: light-dark() inside @media gets compiled to a
+   prefers-color-scheme query, which would ignore the theme toggle. */
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --glass: var(--glass-reduced);
+    --glass-strong: var(--glass-strong-reduced);
+  }
+}
+
+/* One visible focus style everywhere. */
+:where(a, button, input, select, textarea, summary):focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+:where(input, textarea, select):focus-visible {
+  outline-offset: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Native date input: match the text color and soften the picker icon. */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  opacity: 0.45;
+  cursor: pointer;
 }
